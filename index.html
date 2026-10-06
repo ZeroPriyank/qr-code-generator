@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Code Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --bg: #0b0e11;
+    --panel: #12161b;
+    --panel-2: #171c22;
+    --line: #262d35;
+    --ink: #e8ecef;
+    --ink-dim: #8a94a0;
+    --accent: #5eead4;
+    --accent-dim: #1c3733;
+    --error: #ff6b6b;
+    --mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    min-height: 100vh;
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+    background-image:
+      radial-gradient(circle at 20% 15%, rgba(94,234,212,0.06), transparent 40%),
+      radial-gradient(circle at 80% 85%, rgba(94,234,212,0.04), transparent 40%);
+  }
+
+  .wrap {
+    width: 100%;
+    max-width: 460px;
+  }
+
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  .eyebrow::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 6px;
+    letter-spacing: -0.02em;
+  }
+
+  .subtitle {
+    color: var(--ink-dim);
+    font-size: 14.5px;
+    margin: 0 0 28px;
+    line-height: 1.5;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 22px;
+  }
+
+  label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 14px;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  input[type="text"]::placeholder { color: #545c66; }
+
+  input[type="text"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  input[type="text"].invalid {
+    border-color: var(--error);
+    box-shadow: 0 0 0 3px rgba(255,107,107,0.12);
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  button {
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: transform 0.08s ease, opacity 0.15s ease, background 0.15s ease;
+  }
+
+  button:active { transform: scale(0.97); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #062622;
+    flex: 1;
+  }
+
+  .btn-primary:hover { opacity: 0.9; }
+
+  .btn-secondary {
+    background: transparent;
+    border-color: var(--line);
+    color: var(--ink-dim);
+  }
+
+  .btn-secondary:hover {
+    color: var(--ink);
+    border-color: #3a434d;
+  }
+
+  .error-msg {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--error);
+    margin-top: 10px;
+  }
+
+  .error-msg.show { display: flex; }
+
+  .result {
+    display: none;
+    margin-top: 24px;
+    padding-top: 22px;
+    border-top: 1px dashed var(--line);
+    text-align: center;
+  }
+
+  .result.show { display: block; }
+
+  .qr-frame {
+    display: inline-block;
+    background: #fff;
+    padding: 16px;
+    border-radius: 10px;
+    line-height: 0;
+  }
+
+  #qrcode img, #qrcode canvas {
+    display: block;
+    image-rendering: pixelated;
+  }
+
+  .result-url {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-dim);
+    margin: 14px 0 0;
+    word-break: break-all;
+    padding: 0 8px;
+  }
+
+  .download-row {
+    margin-top: 16px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .btn-download {
+    background: var(--panel-2);
+    border-color: var(--line);
+    color: var(--accent);
+  }
+
+  .btn-download:hover {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  .footer-note {
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #4a525c;
+    margin-top: 18px;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="eyebrow">Client-side · No backend</div>
+  <h1>QR Code Generator</h1>
+  <p class="subtitle">Enter a link and generate a scannable QR code</p>
+
+  <div class="panel">
+    <label for="urlInput">Link</label>
+    <div class="input-row">
+      <input type="text" id="urlInput" placeholder="Paste your link here..." autocomplete="off" spellcheck="false">
+    </div>
+    <div class="error-msg" id="errorMsg"></div>
+
+    <div class="btn-row">
+      <button class="btn-primary" id="generateBtn">Generate QR Code</button>
+      <button class="btn-secondary" id="clearBtn">Clear</button>
+    </div>
+
+    <div class="result" id="result">
+      <div class="qr-frame">
+        <div id="qrcode"></div>
+      </div>
+      <p class="result-url" id="resultUrl"></p>
+      <div class="download-row">
+        <button class="btn-download" id="downloadBtn">Download QR Code (PNG)</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="footer-note">Generated entirely in your browser</p>
+</div>
+
+<script>
+  const urlInput = document.getElementById('urlInput');
+  const generateBtn = document.getElementById('generateBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const errorMsg = document.getElementById('errorMsg');
+  const result = document.getElementById('result');
+  const resultUrl = document.getElementById('resultUrl');
+  const qrContainer = document.getElementById('qrcode');
+
+  let qrInstance = null;
+  let currentValue = '';
+
+  function showError(msg) {
+    errorMsg.textContent = msg;
+    errorMsg.classList.add('show');
+    urlInput.classList.add('invalid');
+    result.classList.remove('show');
+  }
+
+  function clearError() {
+    errorMsg.classList.remove('show');
+    errorMsg.textContent = '';
+    urlInput.classList.remove('invalid');
+  }
+
+  function normalizeUrl(raw) {
+    let value = raw.trim();
+    if (!value) return null;
+    // If it looks like it has no protocol, prepend https://
+    if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(value)) {
+      value = 'https://' + value;
+    }
+    return value;
+  }
+
+  function isValidUrl(value) {
+    try {
+      const u = new URL(value);
+      // Require a host with at least one dot, or localhost, to avoid nonsense like "https://asdf"
+      if (!u.hostname) return false;
+      if (u.hostname === 'localhost') return true;
+      return u.hostname.includes('.') && u.hostname.split('.').every(part => part.length > 0);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function generateQr() {
+    const raw = urlInput.value;
+
+    if (!raw.trim()) {
+      showError('Please enter a link.');
+      return;
+    }
+
+    const normalized = normalizeUrl(raw);
+
+    if (!isValidUrl(normalized)) {
+      showError('That doesn\'t look like a valid URL. Try something like https://example.com');
+      return;
+    }
+
+    clearError();
+    currentValue = normalized;
+
+    qrContainer.innerHTML = '';
+    qrInstance = new QRCode(qrContainer, {
+      text: normalized,
+      width: 220,
+      height: 220,
+      colorDark: '#0b0e11',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+
+    resultUrl.textContent = normalized;
+    result.classList.add('show');
+  }
+
+  function clearAll() {
+    urlInput.value = '';
+    clearError();
+    qrContainer.innerHTML = '';
+    result.classList.remove('show');
+    currentValue = '';
+    urlInput.focus();
+  }
+
+  function downloadQr() {
+    // qrcodejs renders either an <img> or a <canvas> depending on browser support
+    const img = qrContainer.querySelector('img');
+    const canvas = qrContainer.querySelector('canvas');
+
+    const triggerDownload = (dataUrl) => {
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = 'qrcode.png';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+
+    if (canvas) {
+      triggerDownload(canvas.toDataURL('image/png'));
+    } else if (img) {
+      // Redraw onto a fresh canvas to ensure PNG export works even if src is a data URI already
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = img.naturalWidth || 220;
+      tempCanvas.height = img.naturalHeight || 220;
+      const ctx = tempCanvas.getContext('2d');
+      const tempImg = new Image();
+      tempImg.crossOrigin = 'anonymous';
+      tempImg.onload = () => {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        ctx.drawImage(tempImg, 0, 0);
+        triggerDownload(tempCanvas.toDataURL('image/png'));
+      };
+      tempImg.src = img.src;
+    }
+  }
+
+  generateBtn.addEventListener('click', generateQr);
+  clearBtn.addEventListener('click', clearAll);
+  downloadBtn.addEventListener('click', downloadQr);
+
+  urlInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      generateQr();
+    }
+  });
+
+  urlInput.addEventListener('input', () => {
+    if (errorMsg.classList.contains('show')) clearError();
+  });
+</script>
+
+</body>
+</html>
